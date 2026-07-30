@@ -17,7 +17,18 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const secret = process.env.BITSCALE_WEBHOOK_SECRET;
-  const origin = new URL(request.url).origin;
+  // Build the PUBLIC origin from proxy headers. Behind Railway, request.url
+  // reflects the internal bind address (localhost:PORT) — using it produces a
+  // private-IP webhook URL that Bitscale rejects ("access to private IP
+  // addresses is not allowed"). Prefer x-forwarded-host / -proto.
+  const reqUrl = new URL(request.url);
+  const proto =
+    request.headers.get("x-forwarded-proto") ?? reqUrl.protocol.replace(":", "");
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    reqUrl.host;
+  const origin = `${proto}://${host}`;
 
   if (!secret) {
     return NextResponse.json({
