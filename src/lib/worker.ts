@@ -2,7 +2,7 @@ import "server-only";
 import OpenAI from "openai";
 import pLimit from "p-limit";
 import { createServiceSupabase } from "@/lib/supabase/service";
-import { GROQ_BASE_URL } from "@/lib/groq-config";
+import { providerBaseURL, coerceProvider } from "@/lib/llm-config";
 import { createRateGate } from "@/lib/rate-gate";
 import {
   AgentOutputSchema,
@@ -27,6 +27,7 @@ type LeadRow = {
 type CampaignRow = {
   id: string;
   status: string;
+  provider: string;
   model: string;
   concurrency: number;
   delay_ms: number;
@@ -86,7 +87,9 @@ async function execute({
 
   const { data: campaignData, error: cErr } = await supabase
     .from("campaigns")
-    .select("id, status, model, concurrency, delay_ms, system_prompt_snapshot")
+    .select(
+      "id, status, provider, model, concurrency, delay_ms, system_prompt_snapshot"
+    )
     .eq("id", campaignId)
     .single();
 
@@ -154,7 +157,10 @@ async function execute({
     }
   }
 
-  const client = new OpenAI({ apiKey, baseURL: GROQ_BASE_URL });
+  const client = new OpenAI({
+    apiKey,
+    baseURL: providerBaseURL(coerceProvider(campaign.provider)),
+  });
   const limit = pLimit(Math.max(1, Math.min(20, campaign.concurrency)));
   const gate = createRateGate(Math.max(0, campaign.delay_ms ?? 0));
   let qualified = 0;

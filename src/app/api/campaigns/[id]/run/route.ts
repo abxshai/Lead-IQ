@@ -8,16 +8,15 @@ export async function POST(
 ) {
   const { id } = await ctx.params;
 
-  const apiKey = request.headers.get("x-groq-key")?.trim();
+  // BYOK key for the campaign's provider (Groq or Together.ai). The provider
+  // itself is stored on the campaign row, so the worker picks the base URL;
+  // here we just need the key. `x-groq-key` is accepted as a legacy alias.
+  const apiKey = (
+    request.headers.get("x-llm-key") ?? request.headers.get("x-groq-key")
+  )?.trim();
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Missing X-Groq-Key header." },
-      { status: 400 }
-    );
-  }
-  if (!apiKey.startsWith("gsk_")) {
-    return NextResponse.json(
-      { error: "That doesn't look like a Groq key (expected gsk_…)." },
+      { error: "Missing X-LLM-Key header." },
       { status: 400 }
     );
   }

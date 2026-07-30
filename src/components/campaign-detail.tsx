@@ -31,10 +31,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ConnectGroqDialog } from "@/components/connect-groq-dialog";
+import { ConnectLlmDialog } from "@/components/connect-llm-dialog";
 import { DeleteCampaignButton } from "@/components/delete-campaign-button";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { useGroqStore } from "@/lib/groq-store";
+import { useLlmStore } from "@/lib/llm-store";
+import { coerceProvider } from "@/lib/llm-config";
 import { cn } from "@/lib/utils";
 import {
   type Lead,
@@ -53,6 +54,7 @@ type Campaign = {
   name: string;
   status: "pending" | "running" | "completed" | "failed" | "canceled";
   total_leads: number;
+  provider: string;
   model: string;
   concurrency: number;
   source_filename: string | null;
@@ -97,7 +99,11 @@ export function CampaignDetail({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [crossChecking, setCrossChecking] = useState(false);
   const [tempFilter, setTempFilter] = useState<Temperature | "all">("all");
-  const apiKey = useGroqStore((s) => s.apiKey);
+  // The campaign carries its own provider (chosen at create time); we send the
+  // matching BYOK key for that provider.
+  const keys = useLlmStore((s) => s.keys);
+  const provider = coerceProvider(campaign.provider);
+  const apiKey = keys[provider];
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -128,7 +134,7 @@ export function CampaignDetail({
       supabase
         .from("campaigns")
         .select(
-          "id, name, status, total_leads, model, concurrency, source_filename, created_at, started_at, completed_at, google_sheet_id"
+          "id, name, status, total_leads, provider, model, concurrency, source_filename, created_at, started_at, completed_at, google_sheet_id"
         )
         .eq("id", campaign.id)
         .single(),
@@ -173,7 +179,7 @@ export function CampaignDetail({
     try {
       const res = await fetch(`/api/campaigns/${campaign.id}/run`, {
         method: "POST",
-        headers: { "x-groq-key": apiKey },
+        headers: { "x-llm-key": apiKey, "x-llm-provider": provider },
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -338,8 +344,8 @@ export function CampaignDetail({
         <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
           <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <span>
-            Connect your Groq key before starting. It stays in this tab and is
-            only forwarded for this run.
+            Connect your model provider key before starting. It stays in this
+            tab and is only forwarded for this run.
           </span>
           <button
             onClick={() => setDialogOpen(true)}
@@ -427,6 +433,7 @@ export function CampaignDetail({
               <TableHead>Domain</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Area</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead className="w-8"></TableHead>
             </TableRow>
           </TableHeader>
@@ -496,6 +503,21 @@ export function CampaignDetail({
                     <TableCell className="truncate max-w-[140px]">
                       {l.product_area ?? "—"}
                     </TableCell>
+                    <TableCell
+                      className="truncate max-w-[180px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {l.email ? (
+                        <a
+                          href={`mailto:${l.email}`}
+                          className="text-primary hover:underline"
+                        >
+                          {l.email}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {l.default_profile_url ? (
                         <Link
@@ -512,7 +534,7 @@ export function CampaignDetail({
                   {isOpen && hasDetail ? (
                     <TableRow className="bg-muted/20 hover:bg-muted/20">
                       <TableCell></TableCell>
-                      <TableCell colSpan={11} className="py-4">
+                      <TableCell colSpan={12} className="py-4">
                         <DetailGrid lead={l} />
                       </TableCell>
                     </TableRow>
@@ -524,7 +546,7 @@ export function CampaignDetail({
         </Table>
       </div>
 
-      <ConnectGroqDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ConnectLlmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }

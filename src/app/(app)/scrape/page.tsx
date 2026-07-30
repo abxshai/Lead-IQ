@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { usePbApiKeyStore } from "@/lib/pb-api-key-store";
+import { BitscaleInboxCard } from "@/components/scrape/bitscale-inbox-card";
 
 type Agent = { id: string; name: string; script: string };
 
@@ -294,6 +295,8 @@ export default function ScrapePage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <BitscaleInboxCard />
     </>
   );
 }

@@ -10,6 +10,10 @@ export type CreateCampaignInput = {
   source_filename: string | null;
   prompt_template_id: string | null;
   system_prompt_override: string | null;
+  /** LLM provider for this run ("groq" | "together"). Defaults to groq. */
+  provider?: string;
+  /** Model id for this run. Defaults to the campaigns.model DB default. */
+  model?: string;
   concurrency: number;
   delay_ms: number;
   google_sheet_id: string | null;
@@ -55,6 +59,8 @@ export async function createCampaign(input: CreateCampaignInput) {
       prompt_template_id: input.prompt_template_id,
       prompt_template_version: templateVersion,
       system_prompt_snapshot: systemPromptSnapshot,
+      provider: input.provider === "together" ? "together" : "groq",
+      ...(input.model ? { model: input.model } : {}),
       concurrency: input.concurrency,
       delay_ms: Math.max(0, Math.min(60000, input.delay_ms)),
       google_sheet_id: input.google_sheet_id,

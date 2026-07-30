@@ -10,6 +10,10 @@ export type ParsedLead = {
   summary: string | null;
   title_description: string | null;
   location: string | null;
+  // Optional enrichment field. Not part of the 9 required input columns, so
+  // it never counts as "missing"; carried through when a source provides it
+  // (e.g. a Bitscale grid's Email column). Lands in leads.email.
+  email: string | null;
 };
 
 export type ParseResult = {
@@ -67,12 +71,14 @@ const ALIAS_GROUPS: Record<keyof ParsedLead, string[]> = {
     "profileUrl", // NEW (input URL)
     "linkedinProfileUrl", // NEW (resolved URL, fallback)
     "profile_url",
+    "linkedinUrl", // Bitscale "LinkedIn URL"
+    "linkedin", // Bitscale "linkedin"
   ],
-  full_name: ["fullName"], // OLD; NEW synthesizes from first + last (rowToLead)
+  full_name: ["fullName", "name"], // OLD; NEW synthesizes from first + last; Bitscale "name"
   first_name: ["firstName"],
   last_name: ["lastName"],
   company_name: ["companyName", "company"],
-  title: ["title" /* OLD */, "linkedinJobTitle" /* NEW */],
+  title: ["title" /* OLD */, "linkedinJobTitle" /* NEW */, "jobTitle" /* Bitscale */, "position"],
   summary: ["summary" /* OLD */, "linkedinHeadline" /* NEW */],
   title_description: [
     "titleDescription", // OLD
@@ -80,6 +86,7 @@ const ALIAS_GROUPS: Record<keyof ParsedLead, string[]> = {
     "description",
   ],
   location: ["location"],
+  email: ["email", "workEmail", "emailAddress", "businessEmail", "personalEmail"],
 };
 
 // Flatten the groups into a fast canonicalized-header → canonical-column map.
@@ -183,6 +190,7 @@ export function rowToLead(row: Record<string, unknown>): ParsedLead {
     summary: pickByAlias(byKey, ALIAS_GROUPS.summary),
     title_description: pickByAlias(byKey, ALIAS_GROUPS.title_description),
     location: pickByAlias(byKey, ALIAS_GROUPS.location),
+    email: pickByAlias(byKey, ALIAS_GROUPS.email),
   };
   // The profile-scraper export has no fullName column — synthesize it from
   // first + last so the row survives the URL-or-name filter and the preview

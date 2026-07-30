@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_PATHS = ["/login"];
+// The Bitscale webhook receiver is called by Bitscale (no Supabase session) and
+// authenticates via its own ?token= shared secret, so it must bypass the
+// session guard. Everything else stays gated.
+const PUBLIC_PATHS = ["/login", "/api/bitscale/webhook"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

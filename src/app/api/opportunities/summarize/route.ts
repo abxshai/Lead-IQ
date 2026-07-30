@@ -4,7 +4,11 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createServiceSupabase } from "@/lib/supabase/service";
-import { GROQ_BASE_URL, GROQ_MODEL } from "@/lib/groq-config";
+import {
+  providerBaseURL,
+  coerceProvider,
+  providerDefaultModel,
+} from "@/lib/llm-config";
 import { formatThreadForPrompt, type ThreadRow } from "@/lib/touchpoint-thread";
 
 // POST /api/opportunities/summarize   { email }
@@ -41,16 +45,15 @@ const Out = z.object({
 });
 
 export async function POST(request: Request) {
-  const apiKey = request.headers.get("x-groq-key")?.trim();
+  const apiKey = (
+    request.headers.get("x-llm-key") ?? request.headers.get("x-groq-key")
+  )?.trim();
   if (!apiKey) {
-    return NextResponse.json({ error: "Missing X-Groq-Key header." }, { status: 400 });
+    return NextResponse.json({ error: "Missing X-LLM-Key header." }, { status: 400 });
   }
-  if (!apiKey.startsWith("gsk_")) {
-    return NextResponse.json(
-      { error: "That doesn't look like a Groq key (expected gsk_…)." },
-      { status: 400 }
-    );
-  }
+  const provider = coerceProvider(request.headers.get("x-llm-provider"));
+  const modelId =
+    request.headers.get("x-llm-model")?.trim() || providerDefaultModel(provider);
 
   let email: string | undefined;
   try {
@@ -92,11 +95,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ thread_count: threadRows.length });
   }
 
-  const client = new OpenAI({ apiKey, baseURL: GROQ_BASE_URL });
+  const client = new OpenAI({ apiKey, baseURL: providerBaseURL(provider) });
   let parsed: z.infer<typeof Out>;
   try {
     const completion = await client.chat.completions.create({
-      model: GROQ_MODEL,
+      model: modelId,
       temperature: 0.1,
       max_tokens: 700,
       response_format: { type: "json_object" },
@@ -121,7 +124,7 @@ export async function POST(request: Request) {
     status: parsed.status ?? null,
     thread_count: threadRows.length,
     generated_at: new Date().toISOString(),
-    model: GROQ_MODEL,
+    model: modelId,
   };
 
   const { error: updErr } = await service.from("opportunity_summaries").upsert(

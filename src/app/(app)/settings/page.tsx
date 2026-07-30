@@ -18,15 +18,18 @@ export default function SettingsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="bg-card/40">
           <CardHeader>
-            <CardTitle className="text-base">Groq API key (BYOK)</CardTitle>
+            <CardTitle className="text-base">Model provider (BYOK)</CardTitle>
             <CardDescription>
-              Your Groq key is requested per session and never stored on the
-              server. Paste it in the “Connect Groq” dialog before running a
-              campaign.
+              Bring your own key for Groq or Together.ai. Keys are requested per
+              session and never stored on the server. Paste them in the “Connect
+              a model provider” dialog, then pick a provider + model per campaign.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Model used: <span className="text-foreground">openai/gpt-oss-120b</span>
+            Providers:{" "}
+            <span className="text-foreground">Groq</span> ·{" "}
+            <span className="text-foreground">Together.ai</span> — switchable per
+            run.
           </CardContent>
         </Card>
 

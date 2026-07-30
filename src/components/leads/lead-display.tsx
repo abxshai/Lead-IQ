@@ -41,6 +41,7 @@ export type Lead = {
   lead_summary: string | null;
   error: string | null;
   default_profile_url: string | null;
+  email: string | null;
   temperature: Temperature | null;
   touchpoint_match: TouchpointMatch | null;
   touchpoint_summary: TouchpointSummaryData;
@@ -117,7 +118,7 @@ export type TouchpointEvent = {
 // The lead columns both the campaign-detail and /leads queries select. The
 // /leads query adds `location` and the joined campaign on top of these.
 export const LEAD_COLS =
-  "id, full_name, title, company_name, status, function_qualification, function_reasoning, icp_qualification, seniority_scoring, domain_classification, subdomain, subdomain_justification, domain_reasoning, priority_level, product_area, lead_summary, error, default_profile_url, temperature, touchpoint_match, touchpoint_summary";
+  "id, full_name, title, company_name, status, function_qualification, function_reasoning, icp_qualification, seniority_scoring, domain_classification, subdomain, subdomain_justification, domain_reasoning, priority_level, product_area, lead_summary, error, default_profile_url, email, temperature, touchpoint_match, touchpoint_summary";
 
 export const temperatureBadge: Record<Temperature, string> = {
   hot: "border-red-500/40 bg-red-500/10 text-red-400",
@@ -268,6 +269,7 @@ export function hasLeadDetail(l: Lead): boolean {
       l.domain_reasoning ||
       l.lead_summary ||
       l.error ||
+      l.email ||
       hasTouchpoints(l)
   );
 }
@@ -301,7 +303,23 @@ export function DetailGrid({ lead }: { lead: Lead }) {
           </div>
         </div>
       ) : null}
-      {filled.length === 0 && !lead.error && !showTouchpoints ? (
+      {lead.email ? (
+        <div>
+          <div className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground mb-1">
+            Email
+          </div>
+          <a
+            href={`mailto:${lead.email}`}
+            className="font-mono text-primary underline underline-offset-2 break-all"
+          >
+            {lead.email}
+          </a>
+        </div>
+      ) : null}
+      {filled.length === 0 &&
+      !lead.error &&
+      !showTouchpoints &&
+      !lead.email ? (
         <div className="text-muted-foreground italic">
           No additional detail captured for this lead.
         </div>

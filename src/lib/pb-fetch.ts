@@ -14,6 +14,7 @@ const OUTPUT_HEADER: Record<keyof ParsedLead, string> = {
   summary: "summary",
   title_description: "titleDescription",
   location: "location",
+  email: "email", // not in INPUT_COLUMNS, so never emitted by PB; here to satisfy the type
 };
 const OUTPUT_COLS = INPUT_COLUMNS.map((k) => OUTPUT_HEADER[k]);
 
