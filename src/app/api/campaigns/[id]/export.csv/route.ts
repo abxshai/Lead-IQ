@@ -16,6 +16,7 @@ const COLUMNS = [
   "summary",
   "titleDescription",
   "location",
+  "Email",
   "Full Name",
   "Function Qualification",
   "Function Reasoning",
@@ -41,6 +42,7 @@ type LeadExport = {
   summary: string | null;
   title_description: string | null;
   location: string | null;
+  email: string | null;
   agent_full_name: string | null;
   function_qualification: string | null;
   function_reasoning: string | null;
@@ -82,7 +84,7 @@ export async function GET(
   // would otherwise export only the first 1000 leads silently.
   const PAGE_SIZE = 1000;
   const leadCols =
-    "default_profile_url, full_name, first_name, last_name, company_name, title, summary, title_description, location, agent_full_name, function_qualification, function_reasoning, icp_qualification, seniority_scoring, domain_classification, subdomain, subdomain_justification, domain_reasoning, priority_level, product_area, lead_summary, temperature";
+    "default_profile_url, full_name, first_name, last_name, company_name, title, summary, title_description, location, email, agent_full_name, function_qualification, function_reasoning, icp_qualification, seniority_scoring, domain_classification, subdomain, subdomain_justification, domain_reasoning, priority_level, product_area, lead_summary, temperature";
   const allLeads: LeadExport[] = [];
   for (let start = 0; ; start += PAGE_SIZE) {
     let query = supabase
@@ -115,6 +117,7 @@ export async function GET(
     summary: l.summary,
     titleDescription: l.title_description,
     location: l.location,
+    "Email": l.email,
     "Full Name": l.agent_full_name,
     "Function Qualification": l.function_qualification,
     "Function Reasoning": l.function_reasoning,

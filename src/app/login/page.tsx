@@ -67,8 +67,8 @@ export default function LoginPage() {
               />
             </h1>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Qualify LinkedIn leads against your ICP with Groq&apos;s
-              gpt-oss-120b. Bring your own key.
+              Qualify LinkedIn leads against your ICP with Groq or Together.ai.
+              Bring your own key.
             </p>
           </div>
           <div className="flex justify-end overflow-hidden">

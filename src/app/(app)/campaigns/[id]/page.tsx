@@ -24,14 +24,14 @@ export default async function CampaignDetailPage({
       supabase
         .from("campaigns")
         .select(
-          "id, name, status, total_leads, model, concurrency, source_filename, created_at, started_at, completed_at, google_sheet_id"
+          "id, name, status, total_leads, provider, model, concurrency, source_filename, created_at, started_at, completed_at, google_sheet_id"
         )
         .eq("id", id)
         .maybeSingle(),
       supabase
         .from("leads")
         .select(
-          "id, full_name, title, company_name, status, function_qualification, function_reasoning, icp_qualification, seniority_scoring, domain_classification, subdomain, subdomain_justification, domain_reasoning, priority_level, product_area, lead_summary, error, default_profile_url, temperature, touchpoint_match, touchpoint_summary"
+          "id, full_name, title, company_name, status, function_qualification, function_reasoning, icp_qualification, seniority_scoring, domain_classification, subdomain, subdomain_justification, domain_reasoning, priority_level, product_area, lead_summary, error, default_profile_url, email, temperature, touchpoint_match, touchpoint_summary"
         )
         .eq("campaign_id", id)
         .order("created_at", { ascending: true })

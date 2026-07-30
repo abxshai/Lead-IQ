@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConnectGroqDialog } from "@/components/connect-groq-dialog";
-import { useGroqStore } from "@/lib/groq-store";
+import { ConnectLlmDialog } from "@/components/connect-llm-dialog";
+import { useLlmStore } from "@/lib/llm-store";
+import { PROVIDERS } from "@/lib/llm-config";
 
-export function GroqConnectPill() {
+export function LlmConnectPill() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-  const connected = useGroqStore((s) => Boolean(s.apiKey));
+  const provider = useLlmStore((s) => s.provider);
+  const connected = useLlmStore((s) => Boolean(s.keys[s.provider]));
 
   // Avoid hydration mismatch — status comes from sessionStorage.
   useEffect(() => {
@@ -17,10 +19,10 @@ export function GroqConnectPill() {
   }, []);
 
   const label = !mounted
-    ? "Connect Groq"
+    ? "Connect model"
     : connected
-      ? "Groq connected"
-      : "Connect Groq";
+      ? `${PROVIDERS[provider].label} connected`
+      : `Connect ${PROVIDERS[provider].label}`;
 
   return (
     <>
@@ -40,7 +42,7 @@ export function GroqConnectPill() {
         <Key className="h-3.5 w-3.5" />
         {label}
       </Button>
-      <ConnectGroqDialog open={open} onOpenChange={setOpen} />
+      <ConnectLlmDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

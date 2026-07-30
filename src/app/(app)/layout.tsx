@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
-import { GroqConnectPill } from "@/components/groq-connect-pill";
+import { LlmConnectPill } from "@/components/llm-connect-pill";
 import { PbConnectPill } from "@/components/pb-connect-pill";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -32,7 +32,7 @@ export default async function AppLayout({
           </div>
           <div className="flex items-center gap-2">
             <PbConnectPill />
-            <GroqConnectPill />
+            <LlmConnectPill />
             <ThemeToggle />
           </div>
         </header>

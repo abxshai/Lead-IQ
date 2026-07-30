@@ -57,7 +57,7 @@ type Facets = {
 
 // Number of leading non-data columns spanned by the inline-expand row
 // (checkbox cell stays empty, the rest is one wide cell).
-const EXPAND_COLSPAN = 12;
+const EXPAND_COLSPAN = 13;
 
 export function LeadsBrowser({
   leads,
@@ -359,6 +359,7 @@ export function LeadsBrowser({
               <TableHead>Priority</TableHead>
               <TableHead>Area</TableHead>
               <TableHead>Location</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead className="w-8"></TableHead>
             </TableRow>
           </TableHeader>
@@ -457,6 +458,21 @@ export function LeadsBrowser({
                     </TableCell>
                     <TableCell className="truncate max-w-[140px]">
                       {l.location ?? (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell
+                      className="truncate max-w-[180px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {l.email ? (
+                        <a
+                          href={`mailto:${l.email}`}
+                          className="text-primary hover:underline"
+                        >
+                          {l.email}
+                        </a>
+                      ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>

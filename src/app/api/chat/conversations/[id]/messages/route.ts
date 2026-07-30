@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createServiceSupabase } from "@/lib/supabase/service";
-import { GROQ_BASE_URL } from "@/lib/groq-config";
+import { providerBaseURL, coerceProvider } from "@/lib/llm-config";
 import { getAgent } from "@/lib/agents/registry";
 import { runChatLoop, type ChatMessage } from "@/lib/agents/chat-loop";
 import { sseChunk, type ChatStreamEvent } from "@/lib/agents/sse";
@@ -87,20 +87,19 @@ export async function POST(
 ) {
   const { id: conversationId } = await ctx.params;
 
-  // BYOK Groq key
-  const apiKey = request.headers.get("x-groq-key")?.trim();
+  // BYOK key for the active provider (Groq or Together.ai). `x-groq-key` is
+  // accepted as a legacy alias. The provider + optional model come as headers.
+  const apiKey = (
+    request.headers.get("x-llm-key") ?? request.headers.get("x-groq-key")
+  )?.trim();
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Missing X-Groq-Key header." },
+      { error: "Missing X-LLM-Key header." },
       { status: 400 }
     );
   }
-  if (!apiKey.startsWith("gsk_")) {
-    return NextResponse.json(
-      { error: "That doesn't look like a Groq key (expected gsk_…)." },
-      { status: 400 }
-    );
-  }
+  const provider = coerceProvider(request.headers.get("x-llm-provider"));
+  const modelOverride = request.headers.get("x-llm-model")?.trim() || undefined;
 
   // Auth
   const supabase = await createServerSupabase();
@@ -188,7 +187,7 @@ export async function POST(
   const userMsg: ChatMessage = { role: "user", content: userMessage };
   const historyWithUser: ChatMessage[] = [...history, userMsg];
 
-  const groq = new OpenAI({ apiKey, baseURL: GROQ_BASE_URL });
+  const client = new OpenAI({ apiKey, baseURL: providerBaseURL(provider) });
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -204,7 +203,8 @@ export async function POST(
         const result = await runChatLoop({
           agent,
           history: historyWithUser,
-          client: groq,
+          client,
+          model: modelOverride,
           onEvent: enqueue,
         });
 

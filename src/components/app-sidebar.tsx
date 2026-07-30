@@ -73,7 +73,7 @@ export function AppSidebar({ email }: { email: string }) {
         <div className="px-2 text-[11px] text-muted-foreground">
           <div className="opacity-70">Powered by</div>
           <div className="font-medium text-foreground/90">
-            Groq · gpt-oss-120b
+            Groq · Together.ai
           </div>
         </div>
       </div>

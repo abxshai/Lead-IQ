@@ -33,6 +33,9 @@ import {
 import { parseCsv, parseFile, type ParsedLead, type ParseResult } from "@/lib/lead-parser";
 import { createCampaign } from "@/app/(app)/campaigns/actions";
 import { cn } from "@/lib/utils";
+import { useLlmStore } from "@/lib/llm-store";
+import { LlmModelPicker } from "@/components/llm-model-picker";
+import { PROVIDERS, providerDefaultModel } from "@/lib/llm-config";
 
 type Template = {
   id: string;
@@ -73,6 +76,11 @@ export function RunWizard({ templates }: { templates: Template[] }) {
   const [concurrency, setConcurrency] = useState(5);
   const [delayMs, setDelayMs] = useState(1000);
   const [sheetId, setSheetId] = useState("");
+
+  // Provider + model come from the shared BYOK store (set via the picker in
+  // step 2) and are snapshotted onto the campaign row at create time.
+  const provider = useLlmStore((s) => s.provider);
+  const model = useLlmStore((s) => s.model);
 
   // If /scrape → "Push to Campaign" stashed a payload, auto-populate step 2.
   useEffect(() => {
@@ -157,6 +165,8 @@ export function RunWizard({ templates }: { templates: Template[] }) {
           prompt_template_id: templateId === "custom" ? null : templateId,
           system_prompt_override:
             templateId === "custom" ? customPrompt.trim() : null,
+          provider,
+          model: model ?? providerDefaultModel(provider),
           concurrency,
           delay_ms: delayMs,
           google_sheet_id: sheetId.trim() || null,
@@ -275,6 +285,10 @@ export function RunWizard({ templates }: { templates: Template[] }) {
                 />
               </div>
 
+              <div className="sm:col-span-2">
+                <LlmModelPicker />
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Prompt template</Label>
                 <Select
@@ -386,7 +400,7 @@ export function RunWizard({ templates }: { templates: Template[] }) {
             <CardTitle className="text-base">Review and launch</CardTitle>
             <CardDescription>
               Campaign is created as <em>pending</em>. You&apos;ll start the
-              actual Groq run from the campaign page once your key is connected.
+              actual run from the campaign page once your key is connected.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
@@ -402,6 +416,10 @@ export function RunWizard({ templates }: { templates: Template[] }) {
                   ? "Custom (ad-hoc)"
                   : templates.find((t) => t.id === templateId)?.name ?? "—"
               }
+            />
+            <Summary
+              label="Model"
+              value={`${PROVIDERS[provider]?.label ?? provider} · ${model ?? providerDefaultModel(provider)}`}
             />
             <Summary label="Concurrency" value={`${concurrency} parallel`} />
             <Summary

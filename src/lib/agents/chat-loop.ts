@@ -44,14 +44,18 @@ export async function runChatLoop({
   agent,
   history,
   client,
+  model,
   onEvent,
 }: {
   agent: AgentConfig;
   /** Full history including the new user message at the tail. */
   history: ChatMessage[];
   client: OpenAI;
+  /** Model id override (BYOK provider/model). Falls back to the agent default. */
+  model?: string;
   onEvent: (event: ChatStreamEvent) => void;
 }): Promise<ChatLoopResult> {
+  const modelId = model ?? agent.model;
   const tools = agent.tools
     .map((name) => ALL_TOOLS[name])
     .filter(Boolean)
@@ -73,7 +77,7 @@ export async function runChatLoop({
 
   for (let loop = 0; loop < MAX_TOOL_LOOPS; loop++) {
     const stream = await client.chat.completions.create({
-      model: agent.model,
+      model: modelId,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       messages: messages as any,
       tools: tools.length > 0 ? tools : undefined,

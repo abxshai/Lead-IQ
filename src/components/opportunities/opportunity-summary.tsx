@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Sparkles, Loader2, ArrowRightCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useGroqStore } from "@/lib/groq-store";
+import { useLlmStore } from "@/lib/llm-store";
+import { providerDefaultModel } from "@/lib/llm-config";
 import type { TouchpointSummaryData } from "@/components/leads/lead-display";
 
 function fmtDay(iso?: string | null): string | null {
@@ -27,14 +28,16 @@ export function OpportunitySummary({
   initial: TouchpointSummaryData;
   threadCount: number;
 }) {
-  const apiKey = useGroqStore((s) => s.apiKey);
+  const provider = useLlmStore((s) => s.provider);
+  const model = useLlmStore((s) => s.model);
+  const apiKey = useLlmStore((s) => s.keys[s.provider]);
   const [summary, setSummary] = useState<TouchpointSummaryData>(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function summarize() {
     if (!apiKey) {
-      setError("Connect your Groq key to summarize.");
+      setError("Connect a model provider to summarize.");
       return;
     }
     setLoading(true);
@@ -42,7 +45,12 @@ export function OpportunitySummary({
     try {
       const res = await fetch(`/api/opportunities/summarize`, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-groq-key": apiKey },
+        headers: {
+          "content-type": "application/json",
+          "x-llm-key": apiKey,
+          "x-llm-provider": provider,
+          "x-llm-model": model ?? providerDefaultModel(provider),
+        },
         body: JSON.stringify({ email }),
       });
       const data = await res.json();

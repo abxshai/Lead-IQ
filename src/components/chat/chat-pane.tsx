@@ -9,7 +9,9 @@ import {
 } from "react";
 import Link from "next/link";
 import { Send, RotateCcw } from "lucide-react";
-import { useGroqStore } from "@/lib/groq-store";
+import { useLlmStore } from "@/lib/llm-store";
+import { providerDefaultModel } from "@/lib/llm-config";
+import { LlmModelPicker } from "@/components/llm-model-picker";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "./chat-message";
@@ -57,7 +59,9 @@ export function ChatPane({
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const apiKey = useGroqStore((s) => s.apiKey);
+  const provider = useLlmStore((s) => s.provider);
+  const model = useLlmStore((s) => s.model);
+  const apiKey = useLlmStore((s) => s.keys[s.provider]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +71,7 @@ export function ChatPane({
   async function handleSend() {
     if (!input.trim() || streaming) return;
     if (!apiKey) {
-      setError("Connect your Groq key from the pill in the top-right.");
+      setError("Connect a model provider from the pill in the top-right.");
       return;
     }
     setError(null);
@@ -98,7 +102,9 @@ export function ChatPane({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Groq-Key": apiKey,
+            "X-LLM-Key": apiKey,
+            "X-LLM-Provider": provider,
+            "X-LLM-Model": model ?? providerDefaultModel(provider),
           },
           body: JSON.stringify({ content: userText }),
         }
@@ -225,8 +231,9 @@ export function ChatPane({
 
   return (
     <div className="flex flex-1 flex-col gap-4 min-h-0">
-      {messages.length > 0 && (
-        <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <LlmModelPicker size="sm" />
+        {messages.length > 0 && (
           <Link
             href="/chat?new=1"
             className={buttonVariants({ variant: "outline", size: "sm" })}
@@ -234,8 +241,8 @@ export function ChatPane({
             <RotateCcw />
             Clear chat
           </Link>
-        </div>
-      )}
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto pr-2 space-y-3 min-h-0">
         {messages.length === 0 && !streaming && (
           <div className="text-center text-muted-foreground text-sm py-16 space-y-2">
@@ -264,7 +271,7 @@ export function ChatPane({
           placeholder={
             apiKey
               ? "Ask LeadQuery anything about your leads…"
-              : "Connect your Groq key from the top-right to start."
+              : "Connect a model provider from the top-right to start."
           }
           rows={2}
           className="flex-1 resize-none"

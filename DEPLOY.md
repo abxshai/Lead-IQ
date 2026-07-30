@@ -51,7 +51,7 @@ git push -u origin main
 
 ## 3. Set environment variables
 
-In the Railway service → **Variables** tab, add these **six** keys:
+In the Railway service → **Variables** tab, add these keys:
 
 | Key | Value |
 |---|---|
@@ -61,10 +61,11 @@ In the Railway service → **Variables** tab, add these **six** keys:
 | `SUPABASE_DB_URL` | direct Postgres connection string. Supabase dashboard → Project Settings → Database → **Connection string** (Transaction pooler, port 6543, recommended). Needed by the **LeadQuery agent (M-AG1)** to run read-only SQL via postgres.js. |
 | `NODE_ENV` | `production` |
 | `NEXT_TELEMETRY_DISABLED` | `1` |
+| `BITSCALE_WEBHOOK_SECRET` | *(optional)* a random secret (e.g. `openssl rand -hex 24`). Gates the Bitscale Webhook/Export receiver (`POST /api/bitscale/webhook`); the /scrape page shows the ready webhook URL with this token embedded. If unset, the Bitscale import section shows "not configured" and the endpoint returns 503. |
 
-> **Do NOT set any Groq-related env var.** The app is BYOK — users enter
-> their Groq key in-browser per session. There is no server-held Groq key
-> by design.
+> **Do NOT set any provider-related LLM env var (Groq / Together).** The app
+> is BYOK — users enter their Groq **or** Together.ai key in-browser per
+> session. There is no server-held model-provider key by design.
 
 **Optional (lead temperature deep links, M-CX1):**
 
