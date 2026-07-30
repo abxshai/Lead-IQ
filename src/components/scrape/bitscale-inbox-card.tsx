@@ -210,6 +210,17 @@ export function BitscaleInboxCard() {
                     importable list. The rest map through the same aliases as CSV
                     upload.
                   </div>
+                  <div className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-yellow-200">
+                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Each value must be a <strong>live Bitscale column
+                      reference</strong> (use Bitscale&apos;s variable / insert
+                      control in the payload editor) — not literal{" "}
+                      <code className="font-mono">{"{{…}}"}</code> text. Literal
+                      text sends the same value for every row, so the whole grid
+                      imports as one deduped lead.
+                    </span>
+                  </div>
                 </>
               ) : (
                 <div className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-yellow-200">
