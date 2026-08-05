@@ -49,7 +49,29 @@ export async function GET(request: Request) {
       : Array.isArray((body as { data?: unknown[] })?.data)
         ? (body as { data: unknown[] }).data
         : [];
-    const models = list
+
+    // Together's catalogue mixes SERVERLESS models (callable on-demand via the
+    // API, priced per-token) with DEDICATED-only models (require a paid GPU
+    // endpoint — calling one 400s "Unable to access non-serverless model …").
+    // /v1/models has no serverless flag, but serverless models are priced
+    // per-token (pricing.input/output > 0) while dedicated-only ones are
+    // hourly-priced (token price 0). Keep only serverless CHAT models. Fall
+    // back to the full list if nothing matches so the dropdown never empties.
+    let entries = list;
+    if (provider === "together") {
+      const serverlessChat = list.filter((m) => {
+        if (typeof m !== "object" || m === null) return false;
+        const o = m as { type?: unknown; pricing?: Record<string, unknown> };
+        const type = String(o.type ?? "").toLowerCase();
+        const pricing = o.pricing ?? {};
+        const tokenPriced =
+          Number(pricing.input) > 0 || Number(pricing.output) > 0;
+        return type === "chat" && tokenPriced;
+      });
+      if (serverlessChat.length > 0) entries = serverlessChat;
+    }
+
+    const models = entries
       .map((m) => (typeof m === "string" ? m : (m as { id?: unknown })?.id))
       .filter((id): id is string => typeof id === "string" && id.length > 0)
       .sort((a, b) => a.localeCompare(b));
