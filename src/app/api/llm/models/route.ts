@@ -40,9 +40,17 @@ export async function GET(request: Request) {
         { status: status === 401 ? 401 : 502 }
       );
     }
-    const body = (await res.json()) as { data?: Array<{ id?: string }> };
-    const models = (body.data ?? [])
-      .map((m) => m.id)
+    // Response shape differs by provider: OpenAI/Groq wrap the list in
+    // `{ data: [...] }`, while Together returns a bare JSON array. Handle both
+    // so the full catalogue shows for either provider.
+    const body: unknown = await res.json();
+    const list: unknown[] = Array.isArray(body)
+      ? body
+      : Array.isArray((body as { data?: unknown[] })?.data)
+        ? (body as { data: unknown[] }).data
+        : [];
+    const models = list
+      .map((m) => (typeof m === "string" ? m : (m as { id?: unknown })?.id))
       .filter((id): id is string => typeof id === "string" && id.length > 0)
       .sort((a, b) => a.localeCompare(b));
     return NextResponse.json({ models });
