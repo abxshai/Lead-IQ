@@ -6,7 +6,7 @@ short.
 
 Companion docs: [`DOCS.md`](./DOCS.md) (product + architecture), [`UI.md`](./UI.md) (design system: fonts, color tokens, component conventions, refresh candidates).
 
-*Last updated: 2026-06-22*
+*Last updated: 2026-08-06*
 
 ---
 
@@ -102,6 +102,11 @@ On the radar, not committed. Promote when a real trigger appears.
 ---
 
 ## Shipped
+
+**2026-08-05**
+- [x] **Multi-provider LLM toggle (Groq ↔ Together.ai).** BYOK now holds a key per provider and a switch picks the active one; a provider + model dropdown (live from each provider's `/models`) is in the campaign wizard and the LeadQuery chat. New `campaigns.provider` column (migration `0018`) drives the base URL per run — the worker, chat loop, run route, and the touchpoint/opportunity summarize routes all resolve baseURL + model by provider. Together's `/models` is filtered to **serverless chat** models (dedicated-only models 400 "non-serverless model"; no serverless flag exists, so we key off per-token pricing). New `src/lib/llm-config.ts` + `llm-store.ts` (replaced `groq-store`/`groq-config`), `connect-llm-dialog` + `llm-connect-pill`, `llm-model-picker`, `GET /api/llm/models`. Legacy `x-groq-key` header still accepted; the old `gsk_` prefix checks dropped. Pushed to `main`, live on prod.
+- [x] **Bitscale email enrichment (Webhook/Export ingest).** Bitscale's run/enrich REST API is Enterprise-gated (workspace on Booster) and has no read-rows endpoint, so ingest is a **token-authed webhook receiver** (`POST /api/bitscale/webhook?token=…`) → `bitscale_inbox` staging → a "Fetch a Bitscale table" card on `/scrape` listing received batches → Push to Campaign (reuses the wizard handoff → qualify normally). New `leads.email` column carried by the shared parser (Bitscale column aliases: `jobTitle`/`linkedinUrl`/`email`/…) and surfaced in the campaign-detail + `/leads` tables, the inline expand, and both CSV exports. Migration `0018` also recreates the `distinct_leads` materialized view to include `email`. `proxy.ts` lets the token-authed webhook path bypass the session guard; `BITSCALE_WEBHOOK_SECRET` env gates it (see `DEPLOY.md`). Verified end-to-end on prod.
+  - *Bitscale config notes:* the webhook is a per-row **Action Column → Webhook** (no whole-table push); the URL must be the public Railway host (private-IP/localhost is rejected); payload values must be **live column references** (literal `{{…}}` text sends identical values → dedupes to 1 lead); Bitscale treats referenced columns as **required**, so rows with an empty referenced cell 400 — use always-filled columns or mark inputs optional.
 
 **2026-06-22**
 - [x] **Removed `/analytics`.** The dashboard was bloated and slow (fetch-every-lead-then-filter-in-memory, `force-dynamic`, Recharts) and `/leads` covers the operational need better. Deleted the route, `analytics-dashboard.tsx`, and the now-orphaned `src/components/ui/chart.tsx`; dropped the sidebar entry (`BarChart3`) and the `revalidatePath("/analytics")` in `deleteCampaign` (→ `/leads`). The `--chart-*` tokens + `recharts` dep are left in place (harmless, unused) for a future charts surface. Cross-source / exec reporting, if needed later, is the **BI offload** backlog item (SQL views → Metabase/Looker), not an in-app rebuild.

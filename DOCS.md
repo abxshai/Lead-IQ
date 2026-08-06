@@ -1,6 +1,6 @@
 # Lead-IQ — Product & Architecture Documentation
 
-*Last updated: 2026-06-22*
+*Last updated: 2026-08-06*
 
 Lead-IQ is an internal self-serve tool at Deccan AI that qualifies
 LinkedIn leads against a target Ideal Customer Profile (ICP) using a
@@ -281,7 +281,7 @@ CRM grows.
 | Theme | Dark, pure black + **#6bb3ff** sky-blue radial gradient; **Major Mono Display** headings + **JetBrains Mono** body | Calm, identifiable, developer-adjacent feel |
 | Auth | **Supabase Auth — shared password** (single shared user) | 5-person team, OAuth / per-user auth would be overkill |
 | Database | **Supabase Postgres** with row-level security | Managed, auth-integrated, cheap |
-| LLM | **Groq** `openai/gpt-oss-120b` via the OpenAI SDK (BYOK) | 250k tokens/min, OpenAI-compatible API, open-weights |
+| LLM | **Groq** / **Together.ai** (default `openai/gpt-oss-120b`) via the OpenAI SDK (BYOK) | Provider + model switchable per campaign and in chat; both OpenAI-compatible, open-weights. Together listed to serverless chat models. |
 | Scrape source | **Phantombuster** Sales Navigator Search Export (BYOK) | Vendor handles cookies/identities/bans; we just read the S3 result |
 | Parsing | **papaparse** | Streams CSV and handles edge cases cleanly |
 | Validation | **Zod** | Runtime schema, drives retry logic on schema failures |
@@ -400,6 +400,23 @@ Groq openai/gpt-oss-120b (JSON mode)
 ## 8. Current state
 
 **Shipped:**
+- **Multi-provider LLM — Groq ↔ Together.ai (2026-08-05)** — BYOK holds a key
+  per provider with a switch for the active one; a provider + model dropdown
+  (populated live from each provider's `/models`) is in the campaign wizard and
+  the LeadQuery chat. `campaigns.provider` (migration `0018`) drives the base
+  URL per run; the worker, chat loop, run route, and the touchpoint/opportunity
+  summarize routes all resolve base URL + model by provider. Together's catalogue
+  is filtered to **serverless chat** models (dedicated-only models error when
+  called). Legacy `x-groq-key` header still accepted.
+- **Bitscale email enrichment — Webhook/Export (2026-08-05)** — Bitscale's
+  run/enrich REST API is Enterprise-gated with no read-rows endpoint, so ingest
+  is a **token-authed webhook receiver** (`POST /api/bitscale/webhook`) that
+  stages rows in `bitscale_inbox`; a "Fetch a Bitscale table" card on `/scrape`
+  lists received batches and pushes one into the campaign wizard to qualify. A
+  new **`leads.email`** column is carried by the shared parser and surfaced in
+  the campaign-detail + `/leads` tables, the inline expand, and both CSV exports
+  (migration `0018`, which also recreates the `distinct_leads` view to include
+  it). Gated by `BITSCALE_WEBHOOK_SECRET`.
 - **Opportunities surface (`/opportunities`, M-CX3)** — one card feed of the
   live, positive signals a rep should act on, newest-engagement-first, from
   **both** halves of the CRM: **Smartlead genuine-interest conversations**
