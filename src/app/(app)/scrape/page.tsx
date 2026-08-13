@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { usePbApiKeyStore } from "@/lib/pb-api-key-store";
 import { BitscaleInboxCard } from "@/components/scrape/bitscale-inbox-card";
+import { ApifyFetchCard } from "@/components/scrape/apify-fetch-card";
 
 type Agent = { id: string; name: string; script: string };
 
@@ -296,6 +297,7 @@ export default function ScrapePage() {
         </Card>
       ) : null}
 
+      <ApifyFetchCard />
       <BitscaleInboxCard />
     </>
   );
